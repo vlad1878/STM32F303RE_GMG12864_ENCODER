@@ -187,13 +187,13 @@ int main(void)
 				break;
 		  case 40:
 				GMG12864_Clean_Frame_buffer();
-				sprintf(tx_buffer, "Parameters first str");
+				sprintf(tx_buffer, "Parameters fifht str");
 				GMG12864_Decode_UTF8(0, 0, 1, 0, tx_buffer);
 				GMG12864_Update();
 				break;
 		  case 50:
 				GMG12864_Clean_Frame_buffer();
-				sprintf(tx_buffer, "Parameters first str");
+				sprintf(tx_buffer, "Parameters sixth str");
 				GMG12864_Decode_UTF8(0, 0, 1, 0, tx_buffer);
 				GMG12864_Update();
 				break;
