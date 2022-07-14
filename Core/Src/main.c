@@ -38,6 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define rx_uart_buffer_size 30
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,6 +49,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+uint8_t rx_uart_buffer[rx_uart_buffer_size] = {0, };
+uint16_t rx_uart_buffer_len = 0;
+bool rx_uart_buffer_ready = 0;
 extern char tx_buffer[128];
 extern uint8_t Frame_buffer[1024];
 uint8_t counter = 0;
@@ -112,6 +116,8 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+  HAL_UART_Receive_IT(&huart2, rx_uart_buffer, rx_uart_buffer_size);
   HAL_TIM_Base_Start_IT(&htim4);
   t_led = HAL_GetTick();
   GMG12864_Init();
@@ -126,6 +132,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if(rx_uart_buffer_ready)
+	  {
+		  char tx_uart_buffer[] = "Interrupt!\r\n";
+		  HAL_UART_Transmit_IT(&huart2, tx_uart_buffer, (sizeof(tx_uart_buffer) / sizeof(tx_uart_buffer[0])));
+		  rx_uart_buffer_ready = 0;
+	  }
 	  if(stage_menu == 0)
 	  {
 		  upd_disp();
@@ -175,7 +187,7 @@ int main(void)
 				break;
 		  case 20:
 				GMG12864_Clean_Frame_buffer();
-				sprintf(tx_buffer, "Parameters third str");
+				sprintf(tx_buffer, "UART speed %d", (huart2.Init.BaudRate));
 				GMG12864_Decode_UTF8(0, 0, 1, 0, tx_buffer);
 				GMG12864_Update();
 				break;
@@ -408,7 +420,7 @@ void print_second_line()
 
 void print_third_line()
 {
-	sprintf(tx_buffer, "Third line");
+	sprintf(tx_buffer, "Uart param");
 	GMG12864_Decode_UTF8(15, 20, 1, 0, tx_buffer);
 	GMG12864_Update();
 }
@@ -447,6 +459,20 @@ void upd_disp()
 	{
 		GMG12864_Clean_Frame_buffer();
 		update_display = 0;
+	}
+}
+
+void HAL_UART_IDLE_Callback(UART_HandleTypeDef *huart)
+{
+	if(huart == &huart2)
+	{
+		__HAL_UART_DISABLE_IT(&huart2, UART_IT_IDLE);
+		rx_uart_buffer_len = rx_uart_buffer_size - huart->RxXferCount;
+		HAL_UART_AbortReceive_IT(&huart2);
+		__HAL_UART_CLEAR_IDLEFLAG(&huart2);
+		__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+		HAL_UART_Receive_IT(&huart2, rx_uart_buffer, rx_uart_buffer_size);
+		rx_uart_buffer_ready = 1;
 	}
 }
 /* USER CODE END 4 */

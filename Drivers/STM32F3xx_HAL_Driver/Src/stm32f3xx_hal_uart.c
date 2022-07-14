@@ -2413,6 +2413,11 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
     return;
   }
 
+  if (((isrflags & USART_ISR_IDLE) != 0U) && ((cr1its & USART_CR1_IDLEIE) != 0U))
+    {
+	  HAL_UART_IDLE_Callback(huart);
+      return;
+    }
 }
 
 /**
